@@ -30,7 +30,6 @@ namespace Registro_Materiales_API.Controllers
 
                     foreach (var item in dataItems.Items)
                     {
-                        // Extraer la cantidad de la tabla TMES_MATERIALINVENTORY
                         decimal qty = GetQtyFromInventory(item.ScannedCode);
 
                         // Verificar en la base de datos externa si el KicPNo está como ROLL
@@ -55,8 +54,7 @@ namespace Registro_Materiales_API.Controllers
                             sufijo = "EA"; // Sufijo para no ROLL
                         }
 
-                        // Insertar en la tabla de registros incluyendo cant_sistema y cant_convertida
-                        string query = @"INSERT INTO Registros (insert_by, planta, kicpno, cant_capturada, cant_sistema, cant_convertida, tipo)
+                        string query = @"INSERT INTO Materials.Registros (insert_by, planta, kicpno, cant_capturada, cant_sistema, cant_convertida, tipo)
                                  VALUES (@NoEmpleado, @Planta, @Code, @Quantity, @Qty, @CantConvertida, @Sufijo)";
 
                         using (SqlCommand cmd = new SqlCommand(query, conn))
