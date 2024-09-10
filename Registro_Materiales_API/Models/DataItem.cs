@@ -4,17 +4,13 @@
     {
         public string noEmpleado { get; set; }
         public string planta { get; set; }
-        public List<Item> Items { get; set; } 
+        public List<Item> items { get; set; } 
         
     }
 
     public class Item
     {
-        public string ScannedCode { get; set; }
-        public int Quantity { get; set; }
-
-
-
-
+        public string scannedCode { get; set; }
+        public int quantity { get; set; }
     }
 }

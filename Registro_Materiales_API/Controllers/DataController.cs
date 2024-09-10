@@ -22,36 +22,33 @@ namespace Registro_Materiales_API.Controllers
         [HttpPost]
         public IActionResult SaveData([FromBody] DataItem dataItems)
         {
+            Response res = new();
+
             try
             {
                 using (SqlConnection conn = new SqlConnection(_connectionStringDAWS))
                 {
                     conn.Open();
 
-                    foreach (var item in dataItems.Items)
+                    foreach (var item in dataItems.items)
                     {
-                        decimal qty = GetQtyFromInventory(item.ScannedCode);
+                        decimal qty = GetQtyFromInventory(item.scannedCode);
 
-                        // Verificar en la base de datos externa si el KicPNo está como ROLL
-                        bool isRoll = CheckIfRoll(item.ScannedCode);
+                        bool isRoll = CheckIfRoll(item.scannedCode);
 
-                        // Definir el valor de cant_convertida y el sufijo
                         decimal cantConvertida;
                         string sufijo;
                         if (isRoll)
                         {
-                            // Obtener el valor de BomRatio
-                            decimal bomRatio = GetBomRatio(item.ScannedCode);
+                            decimal bomRatio = GetBomRatio(item.scannedCode);
 
-                            // Calcular cant_convertida
-                            cantConvertida = (item.Quantity * bomRatio) / 1000;
-                            sufijo = "m"; // Sufijo para ROLL
+                            cantConvertida = (item.quantity * bomRatio) / 1000;
+                            sufijo = "m";
                         }
                         else
                         {
-                            // Si no es ROLL, la cantidad convertida es la misma que cant_capturada
-                            cantConvertida = item.Quantity;
-                            sufijo = "EA"; // Sufijo para no ROLL
+                            cantConvertida = item.quantity;
+                            sufijo = "EA";
                         }
 
                         string query = @"INSERT INTO Materials.Registros (insert_by, planta, kicpno, cant_capturada, cant_sistema, cant_convertida, tipo)
@@ -61,8 +58,8 @@ namespace Registro_Materiales_API.Controllers
                         {
                             cmd.Parameters.AddWithValue("@NoEmpleado", dataItems.noEmpleado);
                             cmd.Parameters.AddWithValue("@Planta", dataItems.planta);
-                            cmd.Parameters.AddWithValue("@Code", item.ScannedCode);
-                            cmd.Parameters.AddWithValue("@Quantity", item.Quantity);
+                            cmd.Parameters.AddWithValue("@Code", item.scannedCode);
+                            cmd.Parameters.AddWithValue("@Quantity", item.quantity);
                             cmd.Parameters.AddWithValue("@Qty", qty);
                             cmd.Parameters.AddWithValue("@CantConvertida", cantConvertida);
                             cmd.Parameters.AddWithValue("@Sufijo", sufijo);
@@ -71,11 +68,17 @@ namespace Registro_Materiales_API.Controllers
                     }
                 }
 
-                return Ok("Datos insertados con éxito");
+                res.Title = "Datos insertados";
+                res.Message = "Datos insertados con éxito";
+                res.StatusCode = 200;
+                return Ok(res);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error en el servidor: {ex.Message}");
+                res.Title = "Error";
+                res.Message = $"Error en el servidor: {ex.Message}";
+                res.StatusCode=500;
+                return BadRequest(res);
             }
         }
 
