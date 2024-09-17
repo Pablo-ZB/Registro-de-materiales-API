@@ -106,7 +106,7 @@ namespace Registro_Materiales_API.Controllers
                             if (!reader.IsDBNull(0))
                                 bomRatio = reader.GetDecimal(0);
                             if (!reader.IsDBNull(1))
-                                qtyBox = reader.GetDecimal(1);
+                                qtyBox = reader.GetInt32(1);
                             if (!reader.IsDBNull(2))
                                 compKind = reader.GetString(2);
                         }
