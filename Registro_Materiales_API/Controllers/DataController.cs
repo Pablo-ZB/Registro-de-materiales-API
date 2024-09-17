@@ -32,17 +32,18 @@ namespace Registro_Materiales_API.Controllers
 
                     foreach (var item in dataItems.items)
                     {
-                        decimal qty = GetQtyFromInventory(item.scannedCode);
+                        decimal qty = GetQtyFromInventory(item.scannedCode, dataItems.planta);
 
                         bool isRoll = CheckIfRoll(item.scannedCode);
+
+                        var materialData = GetMaterialMasterData(item.scannedCode);
 
                         decimal cantConvertida;
                         string sufijo;
                         if (isRoll)
                         {
-                            decimal bomRatio = GetBomRatio(item.scannedCode);
 
-                            cantConvertida = (item.quantity * bomRatio) / 1000;
+                            cantConvertida = (item.quantity * materialData.BomRatio) / 1000;
                             sufijo = "m";
                         }
                         else
@@ -51,8 +52,8 @@ namespace Registro_Materiales_API.Controllers
                             sufijo = "EA";
                         }
 
-                        string query = @"INSERT INTO Materials.Registros (insert_by, planta, kicpno, cant_capturada, cant_sistema, cant_convertida, tipo)
-                                 VALUES (@NoEmpleado, @Planta, @Code, @Quantity, @Qty, @CantConvertida, @Sufijo)";
+                        string query = @"INSERT INTO Materials.Registros (insert_by, planta, kicpno, cant_capturada, cant_sistema, cant_convertida, tipo, QtyBox, CompKind)
+                         VALUES (@NoEmpleado, @Planta, @Code, @Quantity, @Qty, @CantConvertida, @Sufijo, @QtyBox, @CompKind)";
 
                         using (SqlCommand cmd = new SqlCommand(query, conn))
                         {
@@ -63,6 +64,8 @@ namespace Registro_Materiales_API.Controllers
                             cmd.Parameters.AddWithValue("@Qty", qty);
                             cmd.Parameters.AddWithValue("@CantConvertida", cantConvertida);
                             cmd.Parameters.AddWithValue("@Sufijo", sufijo);
+                            cmd.Parameters.AddWithValue("@QtyBox", materialData.QtyBox);
+                            cmd.Parameters.AddWithValue("@CompKind", materialData.CompKind);
                             cmd.ExecuteNonQuery();
                         }
                     }
@@ -82,10 +85,13 @@ namespace Registro_Materiales_API.Controllers
             }
         }
 
-        private decimal GetBomRatio(string scannedCode)
+        private (decimal BomRatio, decimal QtyBox, string CompKind) GetMaterialMasterData(string scannedCode)
         {
             decimal bomRatio = 0m;
-            string query = @"SELECT BomRatio FROM TMES_MATERIALMASTER WHERE KicPNo = @Code";
+            decimal qtyBox = 0m;
+            string compKind = string.Empty;
+
+            string query = @"SELECT BomRatio, QtyBox, CompKind FROM TMES_MATERIALMASTER WHERE KicPNo = @Code";
 
             using (SqlConnection conn = new SqlConnection(_connectionStringExternal))
             {
@@ -93,14 +99,22 @@ namespace Registro_Materiales_API.Controllers
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Code", scannedCode);
-                    object result = cmd.ExecuteScalar();
-                    if (result != null && decimal.TryParse(result.ToString(), out decimal ratio))
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        bomRatio = ratio;
+                        if (reader.Read())
+                        {
+                            if (!reader.IsDBNull(0))
+                                bomRatio = reader.GetDecimal(0);
+                            if (!reader.IsDBNull(1))
+                                qtyBox = reader.GetDecimal(1);
+                            if (!reader.IsDBNull(2))
+                                compKind = reader.GetString(2);
+                        }
                     }
                 }
             }
-            return bomRatio;
+
+            return (bomRatio, qtyBox, compKind);
         }
 
         private bool CheckIfRoll(string scannedCode)
@@ -120,19 +134,20 @@ namespace Registro_Materiales_API.Controllers
             }
         }
 
-        private decimal GetQtyFromInventory(string scannedCode)
+        private decimal GetQtyFromInventory(string scannedCode, string planta)
         {
             using (SqlConnection conn = new SqlConnection(_connectionStringExternal))
             {
                 conn.Open();
 
-                string query = @"SELECT Qty FROM TMES_MATERIALINVENTORY WHERE KicPno = @Code";
+                string query = @"SELECT SUM(Qty) FROM TMES_MATERIALINVENTORY WHERE KicPno = @Code AND WareHouseCode = @Planta";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
+                    cmd.Parameters.AddWithValue("@Planta", planta);
                     cmd.Parameters.AddWithValue("@Code", scannedCode);
                     object result = cmd.ExecuteScalar();
-                    return result != null ? Convert.ToDecimal(result) : 0;
+                    return result != DBNull.Value ? Convert.ToDecimal(result) : 0m;
                 }
             }
         }
