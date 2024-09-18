@@ -35,7 +35,6 @@ namespace Registro_Materiales_API.Controllers
                         decimal qty = GetQtyFromInventory(item.scannedCode, dataItems.planta);
 
                         bool isRoll = CheckIfRoll(item.scannedCode);
-
                         var materialData = GetMaterialMasterData(item.scannedCode);
 
                         decimal cantConvertida;
@@ -44,7 +43,12 @@ namespace Registro_Materiales_API.Controllers
                         {
 
                             cantConvertida = (item.quantity * materialData.BomRatio) / 1000;
-                            sufijo = "m";
+                            sufijo = "M";
+                        }
+                        else if(materialData.Uombasis.ToLower().Trim() == "kg" && materialData.Uombasiskic.ToLower().Trim() == "ea")
+                        {
+                            cantConvertida = item.quantity * materialData.BomRatio;
+                            sufijo = "EA";
                         }
                         else
                         {
@@ -85,13 +89,15 @@ namespace Registro_Materiales_API.Controllers
             }
         }
 
-        private (decimal BomRatio, decimal QtyBox, string CompKind) GetMaterialMasterData(string scannedCode)
+        private (decimal BomRatio, decimal QtyBox, string CompKind, string Uombasis, string Uombasiskic) GetMaterialMasterData(string scannedCode)
         {
             decimal bomRatio = 0m;
             decimal qtyBox = 0m;
             string compKind = string.Empty;
+            string uombasis = string.Empty;
+            string uombasiskic = string.Empty;
 
-            string query = @"SELECT BomRatio, QtyBox, CompKind FROM TMES_MATERIALMASTER WHERE KicPNo = @Code";
+            string query = @"SELECT BomRatio, QtyBox, CompKind, UOMBasis, UOMBasisKic FROM TMES_MATERIALMASTER WHERE KicPNo = @Code";
 
             using (SqlConnection conn = new SqlConnection(_connectionStringExternal))
             {
@@ -109,12 +115,16 @@ namespace Registro_Materiales_API.Controllers
                                 qtyBox = reader.GetInt32(1);
                             if (!reader.IsDBNull(2))
                                 compKind = reader.GetString(2);
+                            if (!reader.IsDBNull(3))
+                                uombasis = reader.GetString(3);
+                            if (!reader.IsDBNull(4))
+                                uombasiskic = reader.GetString(4);
                         }
                     }
                 }
             }
 
-            return (bomRatio, qtyBox, compKind);
+            return (bomRatio, qtyBox, compKind, uombasis, uombasiskic);
         }
 
         private bool CheckIfRoll(string scannedCode)
