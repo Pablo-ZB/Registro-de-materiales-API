@@ -41,12 +41,13 @@ namespace Registro_Materiales_API.Controllers
                         string sufijo;
                         if (isRoll)
                         {
-
+                            qty = (qty * materialData.BomRatio) / 1000;
                             cantConvertida = (item.quantity * materialData.BomRatio) / 1000;
                             sufijo = "M";
                         }
                         else if(materialData.Uombasis.ToLower().Trim() == "kg" && materialData.Uombasiskic.ToLower().Trim() == "ea")
                         {
+                            qty = qty * materialData.BomRatio;
                             cantConvertida = item.quantity * materialData.BomRatio;
                             sufijo = "EA";
                         }
