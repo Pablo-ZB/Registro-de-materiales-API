@@ -45,11 +45,27 @@ namespace Registro_Materiales_API.Controllers
                             cantConvertida = (item.quantity * materialData.BomRatio) / 1000;
                             sufijo = "M";
                         }
+                        else if (item.scannedCode == "AKL03-01192")
+                        {
+                            qty = (qty * materialData.Qtypack * materialData.BomRatio) / 1000;
+                            cantConvertida = (item.quantity * materialData.QtyBox * materialData.BomRatio) / 1000;
+                            sufijo = "M";
+                        }else if (materialData.CompKind.ToLower().Trim() == "v/sheet" && materialData.Uombasis.ToLower().Trim() == "m")
+                        {
+                            cantConvertida = item.quantity * materialData.Qtypack;
+                            sufijo = "M";
+                        }
                         else if(materialData.Uombasis.ToLower().Trim() == "kg" && materialData.Uombasiskic.ToLower().Trim() == "ea")
                         {
                             qty = qty * materialData.BomRatio;
                             cantConvertida = item.quantity * materialData.BomRatio;
                             sufijo = "EA";
+                        }
+                        else if(materialData.Uombasis.ToLower().Trim() == "ft" && materialData.CompKind.ToLower().Trim() == "tube")
+                        {
+                            qty = (qty * materialData.BomRatio) / 1000;
+                            cantConvertida = item.quantity * materialData.QtyBox * materialData.BomRatio / 1000;
+                            sufijo = "M";
                         }
                         else
                         {
@@ -90,15 +106,16 @@ namespace Registro_Materiales_API.Controllers
             }
         }
 
-        private (decimal BomRatio, decimal QtyBox, string CompKind, string Uombasis, string Uombasiskic) GetMaterialMasterData(string scannedCode)
+        private (decimal BomRatio, decimal QtyBox, string CompKind, string Uombasis, string Uombasiskic, int Qtypack) GetMaterialMasterData(string scannedCode)
         {
             decimal bomRatio = 0m;
             decimal qtyBox = 0m;
             string compKind = string.Empty;
             string uombasis = string.Empty;
             string uombasiskic = string.Empty;
+            int qtyPack = 0;
 
-            string query = @"SELECT BomRatio, QtyBox, CompKind, UOMBasis, UOMBasisKic FROM TMES_MATERIALMASTER WHERE KicPNo = @Code";
+            string query = @"SELECT BomRatio, QtyBox, CompKind, UOMBasis, UOMBasisKic, QtyPack FROM TMES_MATERIALMASTER WHERE KicPNo = @Code";
 
             using (SqlConnection conn = new SqlConnection(_connectionStringExternal))
             {
@@ -120,12 +137,14 @@ namespace Registro_Materiales_API.Controllers
                                 uombasis = reader.GetString(3);
                             if (!reader.IsDBNull(4))
                                 uombasiskic = reader.GetString(4);
+                            if (!reader.IsDBNull(5))
+                                qtyPack = reader.GetInt32(5);
                         }
                     }
                 }
             }
 
-            return (bomRatio, qtyBox, compKind, uombasis, uombasiskic);
+            return (bomRatio, qtyBox, compKind, uombasis, uombasiskic, qtyPack);
         }
 
         private bool CheckIfRoll(string scannedCode)
