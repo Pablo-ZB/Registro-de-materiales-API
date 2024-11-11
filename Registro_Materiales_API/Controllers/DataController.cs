@@ -50,7 +50,22 @@ namespace Registro_Materiales_API.Controllers
                             qty = (qty * materialData.Qtypack * materialData.BomRatio) / 1000;
                             cantConvertida = (item.quantity * materialData.QtyBox * materialData.BomRatio) / 1000;
                             sufijo = "M";
-                        }else if (materialData.CompKind.ToLower().Trim() == "v/sheet" && materialData.Uombasis.ToLower().Trim() == "m")
+                        }
+                        else if (item.scannedCode == "ESL87-19500")
+                        {
+                            qty = (qty * materialData.BomRatio) / 1000;
+                            cantConvertida = (item.quantity * materialData.BomRatio) / 1000;
+                            sufijo = "EA";
+                        }
+                        else if (item.scannedCode == "EKLKL-00036" || item.scannedCode == "EKLKL-00037" || item.scannedCode == "EKLKL-00056" ||
+                            item.scannedCode == "EKLKL-00060" || item.scannedCode == "EKLKL-00070" || item.scannedCode == "EKLKL-00073" || 
+                            item.scannedCode == "EKLKL-00094" || item.scannedCode == "EKLKL-00096")
+                        {
+                            qty = qty * materialData.BomRatio;
+                            cantConvertida = item.quantity * materialData.BomRatio;
+                            sufijo = "EA";
+                        }
+                        else if (materialData.CompKind.ToLower().Trim() == "v/sheet" && materialData.Uombasis.ToLower().Trim() == "m")
                         {
                             cantConvertida = item.quantity * materialData.Qtypack;
                             sufijo = "M";
