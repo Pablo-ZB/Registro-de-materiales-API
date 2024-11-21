@@ -14,7 +14,7 @@ namespace Registro_Materiales_API.Controllers
 
         public LoginController(IConfiguration configuration)
         {
-            _connectionString = configuration.GetConnectionString("HeadcountConnection"); // Usar la cadena de conexión correcta
+            _connectionString = configuration.GetConnectionString("HeadcountConnection");
         }
 
         [HttpPost("Authenticate")]
@@ -31,7 +31,6 @@ namespace Registro_Materiales_API.Controllers
                 {
                     conn.Open();
 
-                    // Comprobar si el usuario existe
                     string query = @"SELECT COUNT(*) FROM HEADCOUNT WHERE Numreloj = @NoEmpleado";
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -40,7 +39,6 @@ namespace Registro_Materiales_API.Controllers
                         int count = (int)cmd.ExecuteScalar();
                         if (count > 0)
                         {
-                            // Inicio de sesión exitoso, puedes devolver un token o simplemente un éxito
                             return Ok(new { message = "Inicio de sesión exitoso" });
                         }
                         else
@@ -58,7 +56,7 @@ namespace Registro_Materiales_API.Controllers
     }
     public class LoginRequest
     {
-        public string NoEmpleado { get; set; }  // Número de empleado
+        public string NoEmpleado { get; set; }
     }
 
 }
